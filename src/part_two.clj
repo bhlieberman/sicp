@@ -38,7 +38,8 @@
 (def s (->Segment {:x 1 :y 3} {:x 5 :y 7}))
 
 ;; 2.4
-(defn pairs-non-neg [a b] (* (Math/pow 2 a) (Math/pow 3 b)))
+(defn exp-a [a] (Math/pow 2 a))
+(defn exp-b [b] (Math/pow 3 b))
 
 (defn cons+ [a b] (fn [m] (m a b)))
 
@@ -46,4 +47,31 @@
 
 (defn cdr [z] (z (fn [_ q] q)))
 
-(cdr (cons+ 2 3))
+#_(exp-a (cons+ 2 3))
+
+;; 2.1.4
+(defn intadd [x y]
+  (let [[min-x min-y] (map #(apply min %) [x y])
+        [max-x max-y] (map #(apply max %) [x y])]
+    (range (+ min-x min-y) (+ max-x max-y))))
+
+(defn intmul [x y]
+  (let [[min-x min-y] (map #(apply min %) [x y])
+        [max-x max-y] (map #(apply max %) [x y])
+        p1 (* min-x min-y) p2 (* min-x max-y)
+        p3 (* max-x min-y) p4 (* max-x max-y)]
+    (range (min p1 p2 p3 p4)
+           (max p1 p2 p3 p4))))
+
+(defn intdiv [x y]
+  (intmul x (range (/ 1 (apply max y))
+                   (/ 1 (apply min y)))))
+
+(intdiv (range 1 5) (range 5 10))
+
+;; 2.16
+
+(defn last+ [xs]
+  (cond (zero? (count xs)) []
+        (= 1 (count xs)) '(xs)
+        :else (recur (rest xs))))
