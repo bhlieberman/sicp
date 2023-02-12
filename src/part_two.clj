@@ -1,4 +1,5 @@
-(ns part-two)
+(ns part-two
+  (:refer-clojure :exclude [reverse]))
 
 ;; 2.1
 (defn make-rat+ [a b]
@@ -75,3 +76,62 @@
   (cond (zero? (count xs)) []
         (= 1 (count xs)) '(xs)
         :else (recur (rest xs))))
+
+;; 2.17
+
+(defn reverse [xs]
+  (loop [[x & more :as all] xs
+         acc []]
+    (if all
+      (recur more (conj acc x))
+      acc)))
+
+;; 2.18
+
+(defn square-list [coll]
+  (reduce (fn [acc x] (conj acc (* x x))) [] coll))
+
+;; 2.3
+
+;; Huffman trees
+
+(defn huffman [tree-repr]
+  (reduce (fn [[fst snd] [k v]] [(conj fst k) (+ snd v)])
+          [#{} 0] tree-repr))
+
+(huffman {:a 8 :b 3 :c 1 :d 1 :e 1 :f 1 :g 1 :h 1})
+
+(defprotocol ComplexRepr
+  (make-rectangular [this x y][this])
+  (make-polar [this r a][this])
+  (magnitude [this])
+  (angle [this]))
+
+(defrecord RectComplex [x y])
+
+(defrecord PolarComplex [r a])
+
+(extend-protocol ComplexRepr
+  RectComplex
+  (make-rectangular [this] this)
+  (make-polar [this r a]
+    (assoc this :r (* r (Math/cos a))
+           :a (* r (Math/sin a))))
+  (magnitude [this]
+    (Math/sqrt (+ (Math/pow (:x this) 2)
+                  (Math/pow (:y this) 2))))
+  (angle [this] (Math/atan (/ (:y this) (:x this))))
+  PolarComplex
+  (make-rectangular [this x y]
+    (assoc this :x (Math/sqrt (+ (Math/pow x 2)
+                                 (Math/pow y 2)))
+           :y (Math/atan (/ y x))))
+  (make-polar [this] this)
+  (magnitude [this] (:r this))
+  (angle [this] (:a this)))
+
+(def rect-ex (->RectComplex 13 9))
+(def polar-ex (->PolarComplex 13 9))
+
+(make-rectangular rect-ex)
+(make-polar polar-ex)
