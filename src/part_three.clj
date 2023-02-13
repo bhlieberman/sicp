@@ -64,6 +64,7 @@
     (- balance amount)))
 (defmethod make-account-w-password :deposit [{:keys [amount balance]}]
   (+ balance amount))
+(defmethod make-account-w-password :create-acct [info] info)
 
 (make-account-w-password {:transaction :deposit
                           :amount 100
@@ -74,7 +75,7 @@
 
 (defmulti protected-acct (fn [{:keys [transaction password attempts]}]
                            (if (> @attempts 7)
-                             "Invoking procedure (call-the-cops)"
+                             :call-the-cops
                              (if (some? password) transaction nil))))
 (defmethod protected-acct nil [_] "You need a password")
 (defmethod protected-acct :withdraw [{:keys [amount balance]}]
@@ -83,6 +84,8 @@
     (- balance amount)))
 (defmethod protected-acct :deposit [{:keys [amount balance]}]
   (+ balance amount))
+(defmethod protected-acct :call-the-cops [_]
+  (println "Just kidding"))
 
 (def transaction {:transaction :withdraw
                   :password nil
@@ -90,5 +93,16 @@
 
 (dotimes [_ 8]
   (swap! (:attempts transaction) inc)
-  (protected-acct transaction)) 
+  (protected-acct transaction))
 
+;; 3.5
+
+(defn make-joint [acc old-pw new-pw]
+  (if (some-> old-pw (= (:password acc)))
+    (make-account-w-password (assoc acc :password new-pw))
+    (make-account-w-password (assoc acc :password nil))))
+
+(def peter-acc (make-account-w-password {:transaction :create-acct
+                                         :password "foobar"}))
+
+(def paul-acc (make-joint peter-acc "foobar" nil))
