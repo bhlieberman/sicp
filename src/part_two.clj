@@ -102,8 +102,8 @@
 (huffman {:a 8 :b 3 :c 1 :d 1 :e 1 :f 1 :g 1 :h 1})
 
 (defprotocol ComplexRepr
-  (make-rectangular [this x y][this])
-  (make-polar [this r a][this])
+  (make-rectangular [this x y] [this])
+  (make-polar [this r a] [this])
   (magnitude [this])
   (angle [this]))
 
@@ -122,10 +122,10 @@
                   (Math/pow (:y this) 2))))
   (angle [this] (Math/atan (/ (:y this) (:x this))))
   PolarComplex
-  (make-rectangular [this x y]
-    (assoc this :x (Math/sqrt (+ (Math/pow x 2)
-                                 (Math/pow y 2)))
-           :y (Math/atan (/ y x))))
+  (make-rectangular [{:keys [r a] :as this}]
+    (assoc this :x (Math/sqrt (+ (Math/pow r 2)
+                                 (Math/pow a 2)))
+           :y (Math/atan (/ a r))))
   (make-polar [this] this)
   (magnitude [this] (:r this))
   (angle [this] (:a this)))
@@ -133,5 +133,32 @@
 (def rect-ex (->RectComplex 13 9))
 (def polar-ex (->PolarComplex 13 9))
 
-(make-rectangular rect-ex)
-(make-polar polar-ex)
+(make-rectangular polar-ex)
+(rect-ex make-polar)
+
+;; 2.45
+
+(defmulti symbolic-diff (fn [exp var] [(class exp) (class var)]))
+(defmethod symbolic-diff [java.lang.Long java.lang.Long] [_ _] 0)
+(defmethod symbolic-diff [clojure.lang.Symbol clojure.lang.Symbol] [exp var]
+  (if (= exp var) 1 0))
+
+;; 2.47
+
+(defmulti make-rect-multi class)
+(defmethod make-rect-multi RectComplex [{:keys [x y]}]
+  (fn [m] (condp = m
+            :real x
+            :imaginary y
+            :magnitude (Math/sqrt (+ (Math/pow x 2) (Math/pow y 2)))
+            :angle (Math/atan (/ y x)))))
+
+((make-rect-multi rect-ex) :magnitude)
+
+(defmulti make-polar-multi class)
+(defmethod make-polar-multi PolarComplex [{:keys [r a]}]
+  (fn [m] (condp = m
+                 :magnitude r
+                 :angle a)))
+
+((make-polar-multi polar-ex) :magnitude)
