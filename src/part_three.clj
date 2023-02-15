@@ -1,4 +1,5 @@
-(ns part-three)
+(ns part-three
+  (:require [clojure.repl :refer [doc source]]))
 
 (def balance (atom 100))
 
@@ -102,7 +103,62 @@
     (make-account-w-password (assoc acc :password new-pw))
     (make-account-w-password (assoc acc :password nil))))
 
+#_(defmulti make-joint-acct
+    (fn [acc old-pw new-pw]
+      (-> (cond (= old-pw (:password acc))
+                (->> new-pw
+                     (assoc acc :password)))
+          (assoc :transaction :create-acct))))
+
 (def peter-acc (make-account-w-password {:transaction :create-acct
                                          :password "foobar"}))
 
 (def paul-acc (make-joint peter-acc "foobar" nil))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; higher-order cons
+
+(defn cons- [x y]
+  (letfn [(dispatch [m]
+            (cond
+              (= m :car) x
+              (= m :cdr) y
+              :else
+              (throw (UnsupportedOperationException. "Undefined operation -- CONS-"))))]
+    dispatch))
+
+(defn car [z] (z :carz))
+(defn cdr [z] (z :cdr))
+
+(car (cons- 1 3))
+(cdr (cons- 17 4))
+
+;; queues
+
+(defprotocol IMutQueue
+  (make-queue [this])
+  (insert-queue! [this e])
+  (delete-queue! [this e])
+  (-empty? [this])
+  (front-pointer [this])
+  (rear-pointer [this])
+  (set-front-ptr! [this e])
+  (set-rear-ptr! [this e]))
+
+(extend-protocol IMutQueue
+  java.util.LinkedList
+  (make-queue [_] (new java.util.LinkedList))
+  (insert-queue! [this e] (.add this e))
+  (delete-queue! [this _] (.remove this))
+  (-empty? [this] (nil? (.peek this)))
+  (front-pointer [this] (first this))
+  (rear-pointer [this] (rest this))
+  (set-front-ptr! [this e] (.offerFirst this e))
+  (set-rear-ptr! [this e] (.offerLast this e)))
+
+(def ll (new java.util.LinkedList))
+
+(insert-queue! ll 3)
+(-empty? ll)
+(rear-pointer ll)
